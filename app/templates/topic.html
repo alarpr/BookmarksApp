@@ -33,8 +33,11 @@
         </thead>
         <tbody>
         {% for b in bookmarks %}
-          <tr onclick="openPreview('{{ b.url|e }}')">
-            <td><img src="{{ b.url|favicon }}" width="16" height="16" style="vertical-align:middle;margin-right:6px">{{ b.title }}</td>
+          <tr>
+            <td>
+              <img src="{{ b.url|favicon }}" width="16" height="16" style="vertical-align:middle;margin-right:6px">
+              <a href="#" class="preview-link" onclick="openPreview('{{ b.url|e }}'); return false;">{{ b.title }}</a>
+            </td>
             <td>
               <a href="{{ b.url }}" target="_blank" onclick="event.stopPropagation();">{{ b.url }}</a>
               <small class="muted" data-url="{{ b.url }}" data-check>— kontrollin…</small>

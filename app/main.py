@@ -414,6 +414,55 @@ def check_url(url: str):
     return {"ok": ok, "status": status}
 
 
+def _preview_fallback(url: str, message: str) -> HTMLResponse:
+    """Generates a standardized, user-friendly fallback page for the preview iframe."""
+    # The inline CSS is necessary because the content is rendered in an iframe,
+    # so it cannot access the main application's stylesheet.
+    html = f"""
+    <html>
+    <head>
+        <meta charset='utf-8'>
+        <title>Eelvaade ebaõnnestus</title>
+        <style>
+            body {{
+                background: #0b0c10;
+                color: #e9eaee;
+                font: 16px/1.6 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Ubuntu;
+                text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+                padding: 20px;
+            }}
+            .container {{ max-width: 500px; }}
+            p {{ color: #9aa0aa; }}
+            .btn {{
+                display: inline-block;
+                padding: 12px 20px;
+                background: #4f8cff;
+                color: #fff;
+                border-radius: 8px;
+                text-decoration: none;
+                margin-top: 20px;
+                transition: background-color 0.2s;
+            }}
+            .btn:hover {{ background: #699eff; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2>Eelvaade pole saadaval</h2>
+            <p>{message}</p>
+            <a class='btn' target='_blank' href='{url}'>Ava uues aknas</a>
+        </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(html, media_type="text/html")
+
+
 @app.get("/preview", response_class=HTMLResponse)
 def preview(url: str):
     """Server-side preview that works for sites blocking iframes.
@@ -435,12 +484,9 @@ def preview(url: str):
                 video_id = parsed.path.lstrip("/")
             if video_id:
                 embed = f"https://www.youtube.com/embed/{video_id}"
+                # This is a trusted format, so we don't need the fallback.
                 return HTMLResponse(
-                    f"""
-                    <html><body style="margin:0;background:#0b0c10">
-                    <iframe src="{embed}" style="border:0;width:100%;height:100vh" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-                    </body></html>
-                    """,
+                    f'<html><body style="margin:0;background:#0b0c10"><iframe src="{embed}" style="border:0;width:100%;height:100vh" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></body></html>',
                     media_type="text/html",
                 )
 
@@ -464,6 +510,7 @@ def preview(url: str):
                 if md:
                     html = markdown2.markdown(md)
                     title = f"{owner}/{repo} — README"
+                    # This is also trusted, no fallback needed.
                     return HTMLResponse(
                         f"<html><head><meta charset='utf-8'><title>{title}</title><style>body{{background:#0b0c10;color:#e9eaee;font:14px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Ubuntu}} a{{color:#4f8cff}}</style></head><body><h2>{title}</h2>{html}</body></html>",
                         media_type="text/html",
@@ -471,41 +518,42 @@ def preview(url: str):
 
         # Generic fetch and sanitize
         headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 "
-                "(KHTML, like Gecko) Version/17.1 Safari/605.1.15"
-            ),
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9,et;q=0.8",
-            "Cache-Control": "no-cache",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
         }
         with httpx.Client(timeout=10, follow_redirects=True, headers=headers) as client:
             r = client.get(url)
-        # If blocked or not found, show graceful fallback
-        if r.status_code and r.status_code >= 400:
-            msg = f"<p>Eelvaade pole saadaval (HTTP {r.status_code}).</p>"
-            link = f"<p><a class='btn' style='background:#4f8cff;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none' target='_blank' href='{url}'>Ava uues aknas</a></p>"
-            return HTMLResponse(f"<html><body style='background:#0b0c10;color:#e9eaee;font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Ubuntu'>{msg}{link}</body></html>")
+
+        if r.status_code >= 400:
+            return _preview_fallback(url, f"Saiti ei saanud laadida (HTTP staatus: {r.status_code}).")
 
         soup = BeautifulSoup(r.text or "", "html.parser")
-        # remove scripts if any
-        for tag in soup(["script", "noscript", "style"]):
+        for tag in soup(["script", "noscript", "style", "iframe", "header", "footer", "nav"]):
             tag.decompose()
+
         title = soup.title.get_text(strip=True) if soup.title else url
-        # keep some main content
         body = soup.body or soup
-        # Detect Cloudflare or bot wall markers
+
         raw_text = (body.get_text(" ", strip=True) if body else "").lower()
-        cloudflare_block = ("attention required" in raw_text) or ("cloudflare" in raw_text and "blocked" in raw_text)
-        if cloudflare_block:
-            content = "<p>See sait blokeerib automaatse eelvaate (Cloudflare). Kasuta allolevat nuppu, et avada link uues aknas.</p>"
-        else:
-            content = "\n".join(str(el) for el in body.find_all(["h1", "h2", "h3", "p", "ul", "ol", "pre"], limit=80)) or "<p>Ei saanud sisu eelvaadet laadida.</p>"
-        open_btn = f"<p><a class='btn' style='background:#4f8cff;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none' target='_blank' href='{url}'>Ava uues aknas</a></p>"
-        html = f"<html><head><meta charset='utf-8'><title>{title}</title><style>body{{background:#0b0c10;color:#e9eaee;font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Ubuntu}} a{{color:#4f8cff}}</style></head><body><h2>{title}</h2>{content}{open_btn}</body></html>"
+        if "attention required" in raw_text or "cloudflare" in raw_text and "blocked" in raw_text:
+            return _preview_fallback(url, "Sait kasutab Cloudflare'i või sarnast kaitset, mis takistab eelvaate kuvamist.")
+
+        content = "".join(str(el) for el in body.find_all(["h1", "h2", "h3", "p", "ul", "ol", "pre", "article", "main", "div"], limit=80))
+
+        # Check if the extracted content is too short or meaningless
+        if len(content.strip()) < 150:
+             return _preview_fallback(url, "Selle lehe sisu ei saa eelvaates kuvada, kuna see on liiga lühike või nõuab JavaScripti.")
+
+        open_btn = f"<p style='margin-top:2rem;'><a class='btn' style='background:#4f8cff;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none' target='_blank' href='{url}'>Ava uues aknas</a></p>"
+        html = f"<html><head><meta charset='utf-8'><title>{title}</title><style>body{{background:#0b0c10;color:#e9eaee;font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Ubuntu;padding:20px}} a{{color:#4f8cff}}</style></head><body><h2>{title}</h2>{content}{open_btn}</body></html>"
         return HTMLResponse(html, media_type="text/html")
-    except Exception:
-        return HTMLResponse("<html><body>Ei saanud eelvaadet laadida. Ava link uues aknas.</body></html>", media_type="text/html")
+
+    except httpx.ConnectError:
+        return _preview_fallback(url, "Selle aadressiga ei saanud ühendust. Kontrolli, kas URL on õige.")
+    except Exception as e:
+        # A generic catch-all for any other unexpected errors.
+        return _preview_fallback(url, f"Ilmnes ootamatu viga: {type(e).__name__}.")
 
 
 @app.get("/export", response_class=HTMLResponse)
