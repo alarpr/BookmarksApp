@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <form action="/topics/create" method="post">
+        <input type="hidden" name="parent_id" value="{{ current.id if current else '' }}">
+        <input type="text" name="name" placeholder="Uus kaust" required>
+        <button>Lisa</button>
+      </form>
+    </div>
+
+    <ul class="tree">
+      {% macro render_topic(t, current_id) %}
+        <li>
+          <div class="node {{ 'active' if t.id == current_id else '' }}">
+            <a href="/?topic_id={{ t.id }}">📁 {{ t.name }}</a>
+            {% if t.id != (root.id if root else -1) %}
+            <details>
+              <summary>Tööriistad</summary>
+              <form action="/topics/rename/{{ t.id }}" method="post">
+                <input name="name" value="{{ t.name }}" />
+                <button>Uuenda</button>
+              </form>
+              <form action="/topics/delete/{{ t.id }}" method="post" onsubmit="return confirm('Kustuta kaust?');">
+                <button class="danger">Kustuta</button>
+              </form>
+            </details>
+            {% endif %}
+          </div>
+          {% if t.children %}
+            <ul>
+              {% for c in t.children %}
+                {{ render_topic(c, current_id) }}
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
+      {% endmacro %}
+
+      {% if root %}
+        {{ render_topic(root, current.id if current else -1) }}
+      {% endif %}
+    </ul>
+  </aside>
+  <div class="col-resize" data-side="left" title="Lohista, et muuta vasakut veergu"></div>
+
+  <section class="list">
+    <div class="toolbar">
+      {% if imported or skipped %}
+        <div class="btn" style="background:#3abf7a">Imporditud: {{ imported or 0 }}</div>
+        {% if skipped %}<div class="btn" style="background:#9aa0aa;color:#0b0c10">Vahele jäetud: {{ skipped }}</div>{% endif %}
+      {% endif %}
+      <form method="get" action="/">
+        <input type="hidden" name="topic_id" value="{{ current.id if current else '' }}">
+        <input type="search" name="q" value="{{ q }}" placeholder="Otsi pealkirjast või URL-ist">
+        <button>Otsi</button>
+      </form>
+
+      <form action="/bookmarks/create" method="post" class="inline">
+        <input type="hidden" name="topic_id" value="{{ current.id }}">
+        <input name="title" placeholder="Pealkiri" required>
+        <input name="url" placeholder="https://…" required>
+        <button>Lisa link</button>
+      </form>
+    </div>
+
+    {% if bookmarks %}
+      <table class="grid">
+        <thead>
+          <tr><th>Pealkiri</th><th>URL</th><th>Tegevused</th></tr>
+        </thead>
+        <tbody>
+        {% for b in bookmarks %}
+          <tr onclick="openPreview('{{ b.url|e }}')">
+            <td><img src="{{ b.url|favicon }}" width="16" height="16" style="vertical-align:middle;margin-right:6px">{{ b.title }}</td>
+            <td>
+              <a href="{{ b.url }}" target="_blank" onclick="event.stopPropagation();">{{ b.url }}</a>
+              <small class="muted" data-url="{{ b.url }}" data-check>— kontrollin…</small>
+            </td>
+            <td class="actions">
+              <form action="/bookmarks/delete/{{ b.id }}" method="post" onsubmit="return confirm('Kustuta link?');">
+                <button class="danger" onclick="event.stopPropagation();">Kustuta</button>
+              </form>
+              <form action="/bookmarks/move/{{ b.id }}" method="post" class="inline" onclick="event.stopPropagation();">
+                <select name="target_topic_id">
+                  {% macro options(t, depth) %}
+                    <option value="{{ t.id }}" {{ 'selected' if t.id == b.topic_id else '' }}>{{ '-- ' * depth }}{{ t.name }}</option>
+                    {% for ch in t.children %}
+                      {{ options(ch, depth + 1) }}
+                    {% endfor %}
+                  {% endmacro %}
+                  {{ options(root, 0) }}
+                </select>
+                <button>Liiguta</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">(Selles kaustas hetkel kirjeid pole)</p>
+    {% endif %}
+  </section>
+  <div class="col-resize" data-side="right" title="Lohista, et muuta paremat veergu"></div>
+
+  <aside class="preview">
+    {% if open_url %}
+      <iframe src="{{ open_url }}" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      <div class="fallback">
+        <a class="btn" href="{{ open_url }}" target="_blank">Ava uues aknas</a>
+      </div>
+    {% else %}
+      <div class="muted center">Vali vasakult link eelvaateks</div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
+
+

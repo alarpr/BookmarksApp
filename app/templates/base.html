@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bookmark Organizer</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Bookmark Organizer</h1>
+    <nav>
+      <select id="mainMenu" onchange="menuAction(this.value); setTimeout(()=>{ this.selectedIndex=0; }, 300);">
+        <option value="">Halda Ressursse</option>
+        <optgroup label="Import">
+          <option value="import_html">Import HTML</option>
+          <option value="import_csv">Import CSV</option>
+          <option value="import_json">Import JSON</option>
+        </optgroup>
+        <optgroup label="Export">
+          <option value="export_html">Export HTML</option>
+          <option value="export_csv">Export CSV</option>
+          <option value="export_json">Export JSON</option>
+        </optgroup>
+        <optgroup label="Varunda/Taasta">
+          <option value="backup">Varunda DB</option>
+          <option value="restore">Taasta DB</option>
+        </optgroup>
+        <optgroup label="Näidised">
+          <option value="sample_csv">CSV näidis</option>
+          <option value="sample_json">JSON näidis</option>
+        </optgroup>
+      </select>
+
+      <!-- Peidetud vormid failide üleslaadimiseks (visuaalselt peidus, mitte display:none) -->
+      <form id="f_import_html" action="/import" method="post" enctype="multipart/form-data" style="position:fixed;top:0;left:0;opacity:0;width:1px;height:1px;overflow:hidden;z-index:0;">
+        <input id="inp_import_html" type="file" name="file" accept="text/html,.html" onchange="this.form.submit()">
+      </form>
+      <form id="f_import_csv" action="/import_csv" method="post" enctype="multipart/form-data" style="position:fixed;top:0;left:0;opacity:0;width:1px;height:1px;overflow:hidden;z-index:0;">
+        <input id="inp_import_csv" type="file" name="file" accept="text/csv,.csv" onchange="this.form.submit()">
+      </form>
+      <form id="f_import_json" action="/import_json" method="post" enctype="multipart/form-data" style="position:fixed;top:0;left:0;opacity:0;width:1px;height:1px;overflow:hidden;z-index:0;">
+        <input id="inp_import_json" type="file" name="file" accept="application/json,.json" onchange="this.form.submit()">
+      </form>
+      <form id="f_restore" action="/restore" method="post" enctype="multipart/form-data" style="position:fixed;top:0;left:0;opacity:0;width:1px;height:1px;overflow:hidden;z-index:0;">
+        <input id="inp_restore" type="file" name="file" accept="application/octet-stream,.sqlite,.sqlite3" onchange="this.form.submit()">
+      </form>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
+
+
