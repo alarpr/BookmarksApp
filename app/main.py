@@ -2,9 +2,10 @@ from fastapi import FastAPI, Request, Depends, UploadFile, Form
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, text
+from sqlalchemy import select, text, func, delete
+from sqlalchemy.orm import selectinload
 import os
-from typing import Optional
+from typing import Optional, List
 import urllib.parse
 import httpx
 from bs4 import BeautifulSoup
@@ -610,6 +611,53 @@ def restore_db(file: UploadFile):
     # replace
     os.replace(tmp, target)
     return RedirectResponse(url="/", status_code=303)
+
+
+# Duplicates
+@app.get("/duplicates", response_class=HTMLResponse)
+def view_duplicates(request: Request, session=Depends(get_session)):
+    # Find URLs that are duplicated
+    duplicate_urls_query = (
+        select(Bookmark.url)
+        .group_by(Bookmark.url)
+        .having(func.count(Bookmark.id) > 1)
+        .order_by(func.lower(Bookmark.url))
+    )
+    duplicate_urls = session.execute(duplicate_urls_query).scalars().all()
+
+    # For each duplicate URL, get the full bookmark objects, including topic info
+    duplicates_map = {}
+    if duplicate_urls:
+        # This is more efficient than N+1 queries in a loop
+        all_duplicates_query = (
+            select(Bookmark)
+            .where(Bookmark.url.in_(duplicate_urls))
+            .options(selectinload(Bookmark.topic)) # Eager load topic to avoid N+1
+            .order_by(Bookmark.url, Bookmark.id)
+        )
+        all_bookmarks = session.execute(all_duplicates_query).scalars().all()
+        for b in all_bookmarks:
+            if b.url not in duplicates_map:
+                duplicates_map[b.url] = []
+            duplicates_map[b.url].append(b)
+
+    return templates.TemplateResponse(
+        "duplicates.html",
+        {"request": request, "duplicates": duplicates_map, "root": get_root_topic(session)},
+    )
+
+
+@app.post("/duplicates/delete")
+def delete_duplicates(delete_ids: List[int] = Form(...), session=Depends(get_session)):
+    if delete_ids:
+        # Make sure we don't have empty strings if form is weird
+        id_list = [int(id) for id in delete_ids if str(id).isdigit()]
+        if id_list:
+            stmt = delete(Bookmark).where(Bookmark.id.in_(id_list))
+            session.execute(stmt)
+            session.commit()
+    # Redirect back to the duplicates page to see the result
+    return RedirectResponse(url="/duplicates?deleted=" + str(len(delete_ids)), status_code=303)
 
 
 # Simple UI pages for file uploads (work around Safari restrictions)

@@ -2,46 +2,7 @@
 {% block content %}
 <div class="layout">
   <aside class="sidebar">
-    <div class="sidebar-header">
-      <form action="/topics/create" method="post">
-        <input type="hidden" name="parent_id" value="{{ current.id if current else '' }}">
-        <input type="text" name="name" placeholder="Uus kaust" required>
-        <button>Lisa</button>
-      </form>
-    </div>
-
-    <ul class="tree">
-      {% macro render_topic(t, current_id) %}
-        <li>
-          <div class="node {{ 'active' if t.id == current_id else '' }}">
-            <a href="/?topic_id={{ t.id }}">📁 {{ t.name }}</a>
-            {% if t.id != (root.id if root else -1) %}
-            <details>
-              <summary>Tööriistad</summary>
-              <form action="/topics/rename/{{ t.id }}" method="post">
-                <input name="name" value="{{ t.name }}" />
-                <button>Uuenda</button>
-              </form>
-              <form action="/topics/delete/{{ t.id }}" method="post" onsubmit="return confirm('Kustuta kaust?');">
-                <button class="danger">Kustuta</button>
-              </form>
-            </details>
-            {% endif %}
-          </div>
-          {% if t.children %}
-            <ul>
-              {% for c in t.children %}
-                {{ render_topic(c, current_id) }}
-              {% endfor %}
-            </ul>
-          {% endif %}
-        </li>
-      {% endmacro %}
-
-      {% if root %}
-        {{ render_topic(root, current.id if current else -1) }}
-      {% endif %}
-    </ul>
+    {% include "sidebar_content.html" %}
   </aside>
   <div class="col-resize" data-side="left" title="Lohista, et muuta vasakut veergu"></div>
 

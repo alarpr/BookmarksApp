@@ -10,41 +10,41 @@
   <header>
     <h1>Bookmark Organizer</h1>
     <nav>
-      <select id="mainMenu" onchange="menuAction(this.value); setTimeout(()=>{ this.selectedIndex=0; }, 300);">
-        <option value="">Halda Ressursse</option>
-        <optgroup label="Import">
-          <option value="import_html">Import HTML</option>
-          <option value="import_csv">Import CSV</option>
-          <option value="import_json">Import JSON</option>
-        </optgroup>
-        <optgroup label="Export">
-          <option value="export_html">Export HTML</option>
-          <option value="export_csv">Export CSV</option>
-          <option value="export_json">Export JSON</option>
-        </optgroup>
-        <optgroup label="Varunda/Taasta">
-          <option value="backup">Varunda DB</option>
-          <option value="restore">Taasta DB</option>
-        </optgroup>
-        <optgroup label="Näidised">
-          <option value="sample_csv">CSV näidis</option>
-          <option value="sample_json">JSON näidis</option>
-        </optgroup>
-      </select>
-
-      <!-- Peidetud vormid failide üleslaadimiseks (visuaalselt peidus, mitte display:none) -->
-      <form id="f_import_html" action="/import" method="post" enctype="multipart/form-data" style="position:fixed;top:0;left:0;opacity:0;width:1px;height:1px;overflow:hidden;z-index:0;">
-        <input id="inp_import_html" type="file" name="file" accept="text/html,.html" onchange="this.form.submit()">
-      </form>
-      <form id="f_import_csv" action="/import_csv" method="post" enctype="multipart/form-data" style="position:fixed;top:0;left:0;opacity:0;width:1px;height:1px;overflow:hidden;z-index:0;">
-        <input id="inp_import_csv" type="file" name="file" accept="text/csv,.csv" onchange="this.form.submit()">
-      </form>
-      <form id="f_import_json" action="/import_json" method="post" enctype="multipart/form-data" style="position:fixed;top:0;left:0;opacity:0;width:1px;height:1px;overflow:hidden;z-index:0;">
-        <input id="inp_import_json" type="file" name="file" accept="application/json,.json" onchange="this.form.submit()">
-      </form>
-      <form id="f_restore" action="/restore" method="post" enctype="multipart/form-data" style="position:fixed;top:0;left:0;opacity:0;width:1px;height:1px;overflow:hidden;z-index:0;">
-        <input id="inp_restore" type="file" name="file" accept="application/octet-stream,.sqlite,.sqlite3" onchange="this.form.submit()">
-      </form>
+      <details class="dd">
+        <summary class="btn">Halda Ressursse</summary>
+        <div class="dropdown-panel">
+          <div class="menu-group">
+            <div class="menu-title">Import</div>
+            <a href="/ui/import/html" class="menu-item">Import HTML</a>
+            <a href="/ui/import/csv" class="menu-item">Import CSV</a>
+            <a href="/ui/import/json" class="menu-item">Import JSON</a>
+          </div>
+          <div class="menu-group">
+            <div class="menu-title">Export</div>
+            <a href="/export" class="menu-item" target="_blank">Export HTML</a>
+            <a href="/export.csv" class="menu-item">Export CSV</a>
+            <a href="/export.json" class="menu-item" target="_blank">Export JSON</a>
+          </div>
+          <div class="menu-group">
+            <div class="menu-title">Varunda/Taasta</div>
+            <a href="/backup" class="menu-item">Varunda DB</a>
+            <a href="/ui/restore" class="menu-item">Taasta DB</a>
+          </div>
+          <div class="menu-group">
+            <div class="menu-title">Tööriistad</div>
+            <a href="/duplicates" class="menu-item">Leia duplikaadid</a>
+          </div>
+          <div class="menu-group">
+            <div class="menu-title">Näidised</div>
+            <a href="/sample.csv" class="menu-item">CSV näidis</a>
+            <a href="/sample.json" class="menu-item">JSON näidis</a>
+          </div>
+          <div class="menu-group">
+            <div class="menu-title">Arendajale</div>
+            <a href="/docs" class="menu-item" target="_blank">API dokumendid</a>
+          </div>
+        </div>
+      </details>
     </nav>
   </header>
   <main>

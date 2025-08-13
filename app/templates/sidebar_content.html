@@ -1,0 +1,67 @@
+<div class="sidebar-header">
+  <form action="/topics/create" method="post">
+    <input type="hidden" name="parent_id" value="{{ current.id if current else root.id }}">
+    <input type="text" name="name" placeholder="Uus kaust" required>
+    <button type="submit">Lisa</button>
+  </form>
+</div>
+
+<ul class="tree">
+  {% macro render_topic(t, current_id, root_id) %}
+    <li data-topic-id="{{ t.id }}" ondrop="onDropToTopic(event, {{ t.id }})" ondragover="event.preventDefault()">
+      <div class="node {{ 'active' if t.id == current_id else '' }}">
+        <a href="/?topic_id={{ t.id }}">
+          {{ '📁' if t.children else '📄' }} {{ t.name }}
+        </a>
+        {% if t.id != root_id %}
+        <details class="dd-small" onclick="event.stopPropagation()">
+          <summary>⚙️</summary>
+          <div class="dd-panel-small">
+            <form action="/topics/rename/{{ t.id }}" method="post" onsubmit="const newName = this.querySelector('input').value; if (!newName.trim()) return false;">
+              <input name="name" value="{{ t.name }}" required>
+              <button type="submit">Uuenda</button>
+            </form>
+            <form action="/topics/delete/{{ t.id }}" method="post" onsubmit="return confirm('Oled kindel, et soovid kausta ja kogu selle sisu kustutada?');">
+              <button type="submit" class="danger">Kustuta</button>
+            </form>
+          </div>
+        </details>
+        {% endif %}
+      </div>
+      {% if t.children %}
+        <ul style="padding-left: 20px;">
+          {% for c in t.children %}
+            {{ render_topic(c, current_id, root_id) }}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </li>
+  {% endmacro %}
+
+  {% if root %}
+    {{ render_topic(root, current.id if current else -1, root.id) }}
+  {% endif %}
+</ul>
+
+<style>
+.dd-small summary { list-style: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+.dd-small summary::-webkit-details-marker { display: none; }
+.dd-small { position: relative; }
+.dd-small[open] > summary { background: #2a2d3a; }
+.dd-panel-small {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--card);
+  border: 1px solid #222;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+  width: 200px;
+}
+.dd-panel-small form { display: flex; gap: 4px; }
+.dd-panel-small input { flex: 1; }
+</style>

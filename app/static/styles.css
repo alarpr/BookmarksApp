@@ -1,17 +1,20 @@
-:root { --bg:#0b0c10; --card:#13141a; --text:#e9eaee; --muted:#9aa0aa; --accent:#4f8cff; --danger:#ff5252; --sidebar-w:280px; --preview-w:40vw; }
+:root { --bg:#0b0c10; --card:#13141a; --text:#e9eaee; --muted:#9aa0aa; --accent:#4f8cff; --accent-hover:#699eff; --danger:#ff5252; --sidebar-w:280px; --preview-w:40vw; }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Ubuntu}
 header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--card);border-bottom:1px solid #222}
 h1{font-size:18px;margin:0}
-.btn{display:inline-block;padding:6px 10px;background:var(--accent);color:white;border-radius:8px;text-decoration:none;margin-left:8px}
+.btn{display:inline-block;padding:6px 10px;background:var(--accent);color:white;border-radius:8px;text-decoration:none;margin-left:8px; transition: background-color .2s}
+.btn:hover{background:var(--accent-hover)}
 .btn input{display:none}
 .nav select#mainMenu{appearance:none;-webkit-appearance:none;-moz-appearance:none}
 .dd{position:relative;display:inline-block;margin-left:8px}
 .dd[open] > summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
-.dropdown-panel{position:absolute;top:100%;left:0;background:var(--card);border:1px solid #222;border-top:0;border-radius:0 0 8px 8px;padding:8px;display:flex;gap:6px;flex-direction:column;min-width:220px;z-index:10}
+.dropdown-panel{position:absolute;top:100%;right:0;background:var(--card);border:1px solid #222;border-top:0;border-radius:0 0 8px 8px;padding:8px;display:flex;gap:6px;flex-direction:column;min-width:220px;z-index:10}
 .dropdown-panel .menu-group{border-top:1px solid #222;padding-top:6px;margin-top:6px}
 .dropdown-panel .menu-group:first-child{border-top:0;margin-top:0;padding-top:0}
-.menu-title{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.menu-title{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;padding:0 8px}
+.menu-item{display:block;padding:6px 8px;border-radius:6px;color:var(--text);text-decoration:none;transition:background-color .2s}
+.menu-item:hover{background:#2a2d3a;color:white}
 .dd summary{list-style:none;cursor:pointer}
 .dd summary::-webkit-details-marker{display:none}
 main{height:calc(100vh - 52px)}
@@ -21,8 +24,9 @@ main{height:calc(100vh - 52px)}
 .sidebar form input{width:55%;padding:6px;background:#0b0b11;border:1px solid #2a2a33;color:var(--text);border-radius:6px}
 .sidebar form button{margin-left:6px;padding:6px 10px;border-radius:6px}
 .tree{list-style:none;margin:0;padding:8px}
-.node{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 6px;border-radius:6px}
-.node.active{background:#1a1d26}
+.node{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 6px;border-radius:6px; transition: background-color .2s}
+.node.active{background:rgba(79, 140, 255, 0.25)}
+.node:not(.active):hover{background:#1a1d26}
 .node details{margin-left:auto}
 .danger{background:var(--danger);color:#fff;border:none;padding:6px 8px;border-radius:6px}
 .list{overflow:auto;padding:10px}
@@ -31,6 +35,7 @@ main{height:calc(100vh - 52px)}
 .toolbar button{padding:6px 10px;border-radius:6px;border:none;background:var(--accent);color:#fff}
 .grid{width:100%;border-collapse:collapse}
 .grid th,.grid td{border-bottom:1px solid #222;padding:8px;text-align:left}
+.grid tr{transition:background-color .2s}
 .grid tr:hover{background:#161822;cursor:pointer}
 .actions{display:flex;gap:8px}
 .preview{border-left:1px solid #222;display:flex;flex-direction:column}
