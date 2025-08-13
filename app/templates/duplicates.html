@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="layout">
+    <aside class="sidebar">
+        {% include "sidebar_content.html" %}
+    </aside>
+    <div class="col-resize" data-side="left"></div>
+    <div class="list">
+        <div class="toolbar" style="padding:10px">
+            <h2>Leitud duplikaadid</h2>
+        </div>
+
+        {% if request.query_params.get('deleted') %}
+        <div class="toast success" style="margin: 0 10px 10px; padding: 10px; background: #2a3a2f; border: 1px solid #4caf50; border-radius: 8px;">
+            Kustutati {{ request.query_params.get('deleted') }} kirjet.
+        </div>
+        {% endif %}
+
+        {% if not duplicates %}
+        <p style="padding:0 10px">Duplikaate ei leitud.</p>
+        {% else %}
+        <form id="deleteDuplicatesForm" action="/duplicates/delete" method="post" style="padding:0 10px">
+            <button type="submit" class="btn danger" style="margin-bottom: 1rem; background-color: var(--danger);">Kustuta valitud</button>
+            {% for url, bookmarks in duplicates.items() %}
+            <div class="duplicate-set" style="margin-bottom: 2rem; border: 1px solid #222; padding: 1rem; border-radius: 8px;">
+                <h4><a href="{{ url }}" target="_blank" style="color: var(--text); text-decoration: underline;">{{ url }}</a> ({{ bookmarks|length }} koopiat)</h4>
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;"><input type="checkbox" title="Vali kõik selle grupi kustutatavad kirjed" onchange="toggleGroup(this)"></th>
+                            <th>Pealkiri</th>
+                            <th>Kaust</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookmarks %}
+                        <tr>
+                            <td style="width: 50px; text-align: center;">
+                                {% if loop.first %}
+                                <strong style="font-size: 12px; color: var(--muted);">Allesjääv</strong>
+                                {% else %}
+                                <input type="checkbox" name="delete_ids" value="{{ b.id }}" class="duplicate-checkbox">
+                                {% endif %}
+                            </td>
+                            <td><a href="{{ b.url }}" target="_blank">{{ b.title or '[Tühi pealkiri]' }}</a></td>
+                            <td><a href="/?topic_id={{ b.topic.id }}">{{ b.topic.name }}</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+        </form>
+        {% endif %}
+    </div>
+    <div class="col-resize" data-side="right"></div>
+    <div class="preview">
+        <div class="center muted">
+            <p>Eelvaade pole saadaval</p>
+        </div>
+    </div>
+</div>
+<script>
+    function toggleGroup(master) {
+        const set = master.closest('.duplicate-set');
+        set.querySelectorAll('.duplicate-checkbox').forEach(cb => {
+            cb.checked = master.checked;
+        });
+    }
+</script>
+<style>
+    .toast.success {
+        animation: fadeOut 5s forwards;
+    }
+    @keyframes fadeOut {
+        0% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+</style>
+{% endblock %}
