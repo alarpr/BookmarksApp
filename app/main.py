@@ -531,16 +531,16 @@ def preview(url: str):
         soup = BeautifulSoup(r.text or "", "html.parser")
         for tag in soup(["script", "noscript", "style", "iframe", "header", "footer", "nav"]):
             tag.decompose()
-
+        
         title = soup.title.get_text(strip=True) if soup.title else url
         body = soup.body or soup
-
+        
         raw_text = (body.get_text(" ", strip=True) if body else "").lower()
         if "attention required" in raw_text or "cloudflare" in raw_text and "blocked" in raw_text:
             return _preview_fallback(url, "Sait kasutab Cloudflare'i või sarnast kaitset, mis takistab eelvaate kuvamist.")
 
         content = "".join(str(el) for el in body.find_all(["h1", "h2", "h3", "p", "ul", "ol", "pre", "article", "main", "div"], limit=80))
-
+        
         # Check if the extracted content is too short or meaningless
         if len(content.strip()) < 150:
              return _preview_fallback(url, "Selle lehe sisu ei saa eelvaates kuvada, kuna see on liiga lühike või nõuab JavaScripti.")
